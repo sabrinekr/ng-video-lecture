@@ -84,6 +84,7 @@ if __name__ == '__main__':
         sampler=torch.utils.data.RandomSampler(train_dataset, replacement=True, num_samples=int(1e10)),
         shuffle=False,
         batch_size=config.batch_size,
+        num_workers=4,
         collate_fn=collate_fn,
     )
     test_loader = DataLoader(test_dataset, batch_size=100, num_workers=0, drop_last=False)
@@ -104,7 +105,7 @@ if __name__ == '__main__':
 
         # forward the model
         logits, loss = model(x, y)
-        print("loss", loss)
+        print("loss", loss.item())
 
         optimizer.zero_grad(set_to_none=True)
         loss.backward()
@@ -112,7 +113,7 @@ if __name__ == '__main__':
         iter += 1
 
         # every once in a while evaluate the loss on train and val sets
-        if iter % config.eval_interval == 0 or iter == config.max_iters - 1:
+        if iter % 2 == 0 or iter == config.max_iters - 1:
             out = {}
             with torch.no_grad():
                 model.eval()
@@ -125,7 +126,7 @@ if __name__ == '__main__':
                     losses[k] = loss.item()
                 out["val"] = losses.mean()
                 model.train()
-                print(f"step {iter}: val loss {losses['val']:.4f}")
+                print(f"step {iter}: val loss {out['val']:.4f}")
         # termination conditions
         if config.max_iters is not None and iter >= config.max_iters:
             break
